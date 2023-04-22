@@ -1,0 +1,6 @@
+<form>
+  <input type="text" id="search-bar" placeholder="Search movies...">
+  <button type="button" id="search-button">Search</button>
+</form>
+
+<div id="results"></div>
