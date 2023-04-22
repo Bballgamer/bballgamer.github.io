@@ -1,0 +1,91 @@
+import urllib.request
+import json
+import urllib.parse
+import random
+from difflib import SequenceMatcher
+from IPython.display import Image
+
+# Set the API endpoint URLs and your API keys (replace YOUR_API_KEY with your actual API keys)
+omdb_url = "http://www.omdbapi.com/?apikey=85819520&t="
+tmdb_url = "https://api.themoviedb.org/3/search/movie?api_key=f9f1aeb694040f3ba86c2c4482f160c3&query="
+tmdb_recommendations_url = "https://api.themoviedb.org/3/movie/{}/recommendations?api_key=f9f1aeb694040f3ba86c2c4482f160c3"
+
+# Get user input for the movie title to search for
+title = input("\nEnter a movie title: ")
+
+# Encode the title as a URL-safe string
+title_safe = urllib.parse.quote(title)
+
+# Create the full URL to fetch movie data for the given title
+omdb_full_url = omdb_url + title_safe
+
+# Fetch the data from the OMDB API
+omdb_response = urllib.request.urlopen(omdb_full_url).read().decode('utf-8')
+
+# Parse the JSON response
+omdb_data = json.loads(omdb_response)
+
+# Check if the OMDB API returned an error
+if omdb_data.get('Error'):
+    print(omdb_data.get('Error'))
+else:
+    print("\nTitle:", omdb_data["Title"])
+    print("Year:", omdb_data["Year"])
+    print("Genre:", omdb_data["Genre"])
+    print("Director:", omdb_data["Director"])
+    print("Actors:", omdb_data["Actors"])
+    print("IMDb Rating:", omdb_data["imdbRating"])
+    print("Rotten Tomatoes Score:", omdb_data["Ratings"][1]["Value"])
+    print("Awards:", omdb_data["Awards"])
+    print("Plot:",omdb_data["Plot"])
+    
+    # Display the poster image
+    poster_url = omdb_data["Poster"]
+    urllib.request.urlretrieve(poster_url, "poster.jpg")
+    Image(filename='poster.jpg')
+    
+    # Get movie recommendations based on genre and release year
+genre = omdb_data["Genre"].split(", ")[0]
+release_year = omdb_data["Year"].split("-")[0]
+tmdb_genre_url = tmdb_url + genre.replace(" ", "+") + "&year=" + release_year
+tmdb_genre_response = urllib.request.urlopen(tmdb_genre_url).read().decode('utf-8')
+tmdb_genre_data = json.loads(tmdb_genre_response)
+recommended_movies = []
+
+if tmdb_genre_data.get('results'):
+    results = tmdb_genre_data['results']
+    for result in results:
+        if result.get('vote_count') and result.get('poster_path'):
+            if int(result['vote_count']) >= 100:
+                movie_id = result['id']
+                tmdb_recommendations_response = urllib.request.urlopen(tmdb_recommendations_url.format(movie_id)).read().decode('utf-8')
+                tmdb_recommendations_data = json.loads(tmdb_recommendations_response)
+                if tmdb_recommendations_data.get('results'):
+                    recommendations = tmdb_recommendations_data['results']
+                    for recommendation in recommendations:
+                        if recommendation.get('poster_path'):
+                            if recommendation.get('vote_count'):
+                                if int(recommendation['vote_count']) >= 100:
+                                    plot_score = SequenceMatcher(None, recommendation['overview'], omdb_data['Plot']).ratio() if recommendation.get('overview') else 0
+                                    director_score = 1 if recommendation.get('director') and recommendation['director'] == omdb_data['Director'] else 0
+                                    genre_score = 0.5 if genre in recommendation['genre_ids'] else 0
+                                    score = 0.6*recommendation.get('vote_average', 0) + 0.2*recommendation.get('popularity', 0) + 0.1*recommendation.get('vote_count', 0) + 0.1*director_score + 0.1*plot_score + 0.1*genre_score
+                                    recommended_movie = {'title': recommendation['title'], 'release_date': recommendation['release_date'], 'score': score}
+                                    if recommendation.get('credit_id'):
+                                        recommended_movie['credit_id'] = recommendation['credit_id']
+                                    if recommendation.get('vote_average'):
+                                        recommended_movie['vote_average'] = recommendation['vote_average']
+                                    if recommendation.get('vote_count'):
+                                        recommended_movie['vote_count'] = recommendation['vote_count']
+                                    if recommendation.get('popularity'):
+                                        recommended_movie['popularity'] = recommendation['popularity']
+                                    recommended_movies.append(recommended_movie)
+
+if recommended_movies:
+    recommended_movies = sorted(recommended_movies, key=lambda x: x['score'], reverse=True)[:5]
+    print("\nRecommended movies:")
+    for movie in recommended_movies:
+        print(movie['title'], "(" + movie['release_date'][:4] + ")", "Score: {:.2f}".format(movie['score']))
+else:
+    print("No recommendations.")
+exec(open('main.py').read())
