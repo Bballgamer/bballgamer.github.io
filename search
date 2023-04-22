@@ -1,6 +1,6 @@
-const omdb_url = "http://www.omdbapi.com/?apikey=YOUR_API_KEY&t=";
-const tmdb_url = "https://api.themoviedb.org/3/search/movie?api_key=YOUR_API_KEY&query=";
-const tmdb_recommendations_url = "https://api.themoviedb.org/3/movie/ID/recommendations?api_key=YOUR_API_KEY";
+const omdb_url = "http://www.omdbapi.com/?apikey=85819520&t=";
+const tmdb_url = "https://api.themoviedb.org/3/search/movie?api_key=f9f1aeb694040f3ba86c2c4482f160c3&query=";
+const tmdb_recommendations_url = "https://api.themoviedb.org/3/movie/ID/recommendations?api_key=f9f1aeb694040f3ba86c2c4482f160c3";
 
 const searchButton = document.querySelector("#search-button");
 const searchInput = document.querySelector("#search-bar");
