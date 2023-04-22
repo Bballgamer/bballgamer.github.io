@@ -8,6 +8,13 @@
     <p>Here's where you can put your app's content.</p>
   </body>
 </html>
+
+<form id="search-form">
+  <input type="text" placeholder="Search for a movie" id="search-query">
+  <button type="submit">Search</button>
+</form>
+<div id="search-results"></div>
+
 const searchForm = document.getElementById('search-form');
 const searchQuery = document.getElementById('search-query');
 const searchResults = document.getElementById('search-results');
