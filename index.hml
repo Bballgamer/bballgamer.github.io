@@ -8,3 +8,60 @@
     <p>Here's where you can put your app's content.</p>
   </body>
 </html>
+const searchForm = document.getElementById('search-form');
+const searchQuery = document.getElementById('search-query');
+const searchResults = document.getElementById('search-results');
+
+searchForm.addEventListener('submit', (event) => {
+  event.preventDefault();
+  const searchTerm = searchQuery.value;
+  if (searchTerm !== '') {
+    searchOMDB(searchTerm);
+    searchTMDB(searchTerm);
+  } else {
+    searchResults.innerHTML = '';
+  }
+});
+
+function searchOMDB(searchTerm) {
+  const omdbUrl = `http://www.omdbapi.com/?apikey=85819520&s=${encodeURIComponent(searchTerm)}`;
+  fetch(omdbUrl)
+    .then(response => response.json())
+    .then(data => {
+      if (data.Response === 'True') {
+        displaySearchResults(data.Search);
+      }
+    })
+    .catch(error => console.error(error));
+}
+
+function searchTMDB(searchTerm) {
+  const tmdbUrl = `https://api.themoviedb.org/3/search/movie?api_key=f9f1aeb694040f3ba86c2c4482f160c3&query=${encodeURIComponent(searchTerm)}`;
+  fetch(tmdbUrl)
+    .then(response => response.json())
+    .then(data => {
+      if (data.results.length > 0) {
+        displaySearchResults(data.results);
+      }
+    })
+    .catch(error => console.error(error));
+}
+
+function displaySearchResults(results) {
+  const resultItems = results.map(result => {
+    const title = result.Title || result.title;
+    const year = result.Year || result.release_date.split('-')[0];
+    const imdbId = result.imdbID || result.id;
+    const poster = result.Poster || `https://www.themoviedb.org/t/p/w500/${result.poster_path}`;
+    return `
+      <div class="result-item">
+        <img src="${poster}" alt="${title} poster">
+        <div class="result-details">
+          <h3>${title} (${year})</h3>
+          <a href="https://www.imdb.com/title/${imdbId}/" target="_blank">IMDb</a>
+        </div>
+      </div>
+    `;
+  });
+  searchResults.innerHTML = resultItems.join('');
+}
