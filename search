@@ -1,0 +1,68 @@
+const omdb_url = "http://www.omdbapi.com/?apikey=YOUR_API_KEY&t=";
+const tmdb_url = "https://api.themoviedb.org/3/search/movie?api_key=YOUR_API_KEY&query=";
+const tmdb_recommendations_url = "https://api.themoviedb.org/3/movie/ID/recommendations?api_key=YOUR_API_KEY";
+
+const searchButton = document.querySelector("#search-button");
+const searchInput = document.querySelector("#search-bar");
+const resultsDiv = document.querySelector("#results");
+
+searchButton.addEventListener("click", function() {
+  const searchTerm = searchInput.value;
+  const omdbFullUrl = omdb_url + encodeURIComponent(searchTerm);
+  const tmdbFullUrl = tmdb_url + encodeURIComponent(searchTerm);
+
+  // Fetch OMDB data
+  fetch(omdbFullUrl)
+    .then(response => response.json())
+    .then(data => {
+      if (data.Error) {
+        console.log(data.Error);
+      } else {
+        console.log(data);
+        // Display OMDB data in results div
+        resultsDiv.innerHTML = `
+          <h2>${data.Title}</h2>
+          <p>${data.Plot}</p>
+          <img src="${data.Poster}">
+        `;
+      }
+    });
+
+  // Fetch TMDB data
+  fetch(tmdbFullUrl)
+    .then(response => response.json())
+    .then(data => {
+      if (data.results) {
+        console.log(data.results);
+        // Display TMDB data in results div
+        data.results.forEach(result => {
+          resultsDiv.innerHTML += `
+            <h2>${result.title}</h2>
+            <p>${result.overview}</p>
+            <img src="https://image.tmdb.org/t/p/w500${result.poster_path}">
+          `;
+        });
+
+        // Get movie recommendations based on genre and release year from the first result
+        const firstResult = data.results[0];
+        const genre = firstResult.genre_ids[0];
+        const releaseYear = firstResult.release_date.split("-")[0];
+        const tmdbRecommendationsUrl = tmdb_recommendations_url.replace("ID", firstResult.id) + `&with_genres=${genre}&primary_release_year=${releaseYear}`;
+        fetch(tmdbRecommendationsUrl)
+          .then(response => response.json())
+          .then(data => {
+            console.log(data.results);
+            // Display recommended movies in results div
+            data.results.forEach(result => {
+              resultsDiv.innerHTML += `
+                <h2>${result.title}</h2>
+                <p>${result.overview}</p>
+                <img src="https://image.tmdb.org/t/p/w500${result.poster_path}">
+              `;
+            });
+          });
+      } else {
+        console.log(data.status_message);
+      }
+    });
+});
